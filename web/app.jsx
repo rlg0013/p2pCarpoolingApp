@@ -10,32 +10,38 @@ const colleges = [
 ];
 
 const defaultRide = {
-  driverName: "You",
+  driverId: 1,
+  driverName: "Aarav S",
   college: "RV College of Engineering",
   from: "Jayanagar 4th Block",
   to: "RVCE Mysore Road",
   date: "2026-05-23",
   time: "08:00",
   seats: 2,
-  price: 60,
+  distanceKm: 11.5,
+  fuelCostPerKm: 8.5,
   genderPref: "Any",
   vehicle: "Maruti Baleno",
   meetingPoint: "Metro gate",
-  emergencyShared: true
+  emergencyShared: true,
+  recurring: { enabled: true, days: ["Mon", "Tue", "Wed", "Thu", "Fri"], until: "2026-08-31" }
 };
 
 function App() {
   const [rides, setRides] = useState([]);
+  const [students, setStudents] = useState([]);
   const [stats, setStats] = useState(null);
   const [query, setQuery] = useState("");
   const [gender, setGender] = useState("All");
   const [activeTab, setActiveTab] = useState("rides");
   const [rideForm, setRideForm] = useState(defaultRide);
-  const [toast, setToast] = useState("Prototype ready: college-only rides around Bangalore");
+  const [toast, setToast] = useState("Functional prototype ready: backend features are exposed in the Feature Lab");
+  const [labOutput, setLabOutput] = useState(null);
 
   const filtered = useMemo(() => {
     return rides.filter((ride) => {
-      const haystack = `${ride.driverName} ${ride.college} ${ride.from} ${ride.to} ${ride.tags.join(" ")}`.toLowerCase();
+      const tags = Array.isArray(ride.tags) ? ride.tags.join(" ") : "";
+      const haystack = `${ride.driverName} ${ride.college} ${ride.from} ${ride.to} ${tags} ${ride.routeSummary}`.toLowerCase();
       const queryMatch = !query || haystack.includes(query.toLowerCase());
       const genderMatch = gender === "All" || ride.genderPref === gender;
       return queryMatch && genderMatch;
@@ -43,59 +49,67 @@ function App() {
   }, [rides, query, gender]);
 
   async function loadData() {
-    const [ridesResponse, statsResponse] = await Promise.all([
+    const [ridesResponse, statsResponse, studentsResponse] = await Promise.all([
       fetch("/api/rides"),
-      fetch("/api/stats")
+      fetch("/api/stats"),
+      fetch("/api/students")
     ]);
     setRides(await ridesResponse.json());
     setStats(await statsResponse.json());
+    setStudents(await studentsResponse.json());
   }
 
   useEffect(() => {
     loadData().catch(() => setToast("Could not reach the Go API"));
   }, []);
 
-  async function bookRide(ride) {
-    const response = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        rideId: ride.id,
-        student: "Demo Student",
-        college: "RV College of Engineering"
-      })
+  async function apiCall(label, path, body, method = "POST") {
+    const response = await fetch(path, {
+      method,
+      headers: method === "GET" ? undefined : { "Content-Type": "application/json" },
+      body: method === "GET" ? undefined : JSON.stringify(body)
     });
-
-    if (!response.ok) {
-      setToast("That ride is not available anymore");
-      return;
+    const text = await response.text();
+    let parsed = text;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = { error: text };
     }
-
+    setLabOutput({ label, ok: response.ok, status: response.status, data: parsed });
+    if (!response.ok) {
+      setToast(`${label} failed: ${typeof parsed === "string" ? parsed : parsed.error || response.status}`);
+      return null;
+    }
     await loadData();
-    setToast(`Request sent to ${ride.driverName}. Safety contact and trip link are queued.`);
+    setToast(`${label} completed`);
+    return parsed;
+  }
+
+  async function bookRide(ride) {
+    const response = await apiCall("Ride request", "/api/ride-requests", {
+      rideId: ride.id,
+      passengerId: 2,
+      seatCount: 1,
+      message: "Can I join from the nearest metro gate?"
+    });
+    if (response?.status === "Waitlisted") {
+      setToast(`Ride full. Added to waitlist at position ${response.position}.`);
+    }
   }
 
   async function createRide(event) {
     event.preventDefault();
-    const response = await fetch("/api/rides", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...rideForm,
-        seats: Number(rideForm.seats),
-        price: Number(rideForm.price)
-      })
+    const created = await apiCall("Create recurring ride", "/api/rides", {
+      ...rideForm,
+      driverId: Number(rideForm.driverId),
+      seats: Number(rideForm.seats),
+      distanceKm: Number(rideForm.distanceKm),
+      fuelCostPerKm: Number(rideForm.fuelCostPerKm)
     });
-
-    if (!response.ok) {
-      setToast("Please add pickup, destination, and at least one seat");
-      return;
+    if (created) {
+      setActiveTab("rides");
     }
-
-    const created = await response.json();
-    await loadData();
-    setActiveTab("rides");
-    setToast(`Ride posted from ${created.from} to ${created.to}`);
   }
 
   function updateForm(key, value) {
@@ -113,6 +127,7 @@ function App() {
           <div className="nav-actions">
             <button className={activeTab === "rides" ? "active" : ""} onClick={() => setActiveTab("rides")}>Find rides</button>
             <button className={activeTab === "offer" ? "active" : ""} onClick={() => setActiveTab("offer")}>Offer ride</button>
+            <button className={activeTab === "lab" ? "active" : ""} onClick={() => setActiveTab("lab")}>Feature Lab</button>
             <button className={activeTab === "safety" ? "active" : ""} onClick={() => setActiveTab("safety")}>Safety</button>
           </div>
         </nav>
@@ -120,25 +135,25 @@ function App() {
         <section className="hero">
           <div>
             <p className="eyebrow">College-only carpooling prototype</p>
-            <h1>Match with verified students heading across Bangalore.</h1>
+            <h1>Function-first carpooling backend for Bangalore students.</h1>
             <p className="hero-copy">
-              Browse campus rides, split fares, request seats, and share live-trip safety signals from one student-focused dashboard.
+              Auth, trust verification, route matching, requests, chat, live trips, payments, ratings, waitlists, notifications, and carbon tracking are all API-backed.
             </p>
             <div className="hero-actions">
               <button onClick={() => setActiveTab("rides")}>Browse rides</button>
-              <button className="secondary" onClick={() => setActiveTab("offer")}>Post a ride</button>
+              <button className="secondary" onClick={() => setActiveTab("lab")}>Test features</button>
             </div>
           </div>
           <div className="route-panel">
             <div className="map-line">
-              <span>Indiranagar</span>
+              <span>Jayanagar</span>
               <strong />
               <span>RVCE</span>
             </div>
             <div className="trip-card compact">
-              <span>Next best match</span>
-              <strong>08:10 · 3 seats · Rs 85</strong>
-              <small>College ID required · Emergency sharing on</small>
+              <span>Feature coverage</span>
+              <strong>{stats?.students ?? "--"} students · {stats?.pendingRequests ?? 0} requests</strong>
+              <small>{stats?.monthlyCo2SavedKg?.toFixed?.(1) ?? "--"} kg CO2 saved this month</small>
             </div>
           </div>
         </section>
@@ -147,8 +162,8 @@ function App() {
       <section className="stats-grid">
         <Stat label="Active rides" value={stats?.activeRides ?? "--"} />
         <Stat label="Seats open" value={stats?.seatsAvailable ?? "--"} />
-        <Stat label="CO2 saved" value={`${stats?.carbonSavedKg?.toFixed(1) ?? "--"} kg`} />
-        <Stat label="Verified drivers" value={stats?.verifiedDrivers ?? "--"} />
+        <Stat label="Requests" value={stats?.bookings ?? "--"} />
+        <Stat label="CO2 saved" value={`${stats?.carbonSavedKg?.toFixed?.(1) ?? "--"} kg`} />
       </section>
 
       {toast && <div className="toast">{toast}</div>}
@@ -171,7 +186,7 @@ function App() {
             <div className="profile-card">
               <strong>Demo student</strong>
               <span>RVCE · college email verified</span>
-              <span>Trust score 92 · 14 shared rides</span>
+              <span>Pay later enabled · trust score 86</span>
             </div>
           </aside>
 
@@ -186,9 +201,16 @@ function App() {
       {activeTab === "offer" && (
         <section className="form-shell">
           <form onSubmit={createRide} className="ride-form">
-            <h2>Offer a ride</h2>
+            <h2>Offer a recurring ride</h2>
             <div className="form-grid">
-              <Field label="Driver name" value={rideForm.driverName} onChange={(value) => updateForm("driverName", value)} />
+              <label>
+                Driver
+                <select value={rideForm.driverId} onChange={(event) => updateForm("driverId", event.target.value)}>
+                  {students.filter((student) => student.driversLicense.status === "Verified").map((student) => (
+                    <option key={student.id} value={student.id}>{student.name}</option>
+                  ))}
+                </select>
+              </label>
               <label>
                 College
                 <select value={rideForm.college} onChange={(event) => updateForm("college", event.target.value)}>
@@ -200,7 +222,8 @@ function App() {
               <Field label="Date" type="date" value={rideForm.date} onChange={(value) => updateForm("date", value)} />
               <Field label="Time" type="time" value={rideForm.time} onChange={(value) => updateForm("time", value)} />
               <Field label="Seats" type="number" value={rideForm.seats} onChange={(value) => updateForm("seats", value)} />
-              <Field label="Fare per student" type="number" value={rideForm.price} onChange={(value) => updateForm("price", value)} />
+              <Field label="Distance km" type="number" value={rideForm.distanceKm} onChange={(value) => updateForm("distanceKm", value)} />
+              <Field label="Fuel cost/km" type="number" value={rideForm.fuelCostPerKm} onChange={(value) => updateForm("fuelCostPerKm", value)} />
               <label>
                 Preference
                 <select value={rideForm.genderPref} onChange={(event) => updateForm("genderPref", event.target.value)}>
@@ -216,17 +239,113 @@ function App() {
         </section>
       )}
 
+      {activeTab === "lab" && (
+        <FeatureLab apiCall={apiCall} labOutput={labOutput} />
+      )}
+
       {activeTab === "safety" && (
         <section className="safety-grid">
-          <Info title="College verification" text="Only students with institution email or uploaded ID can request and offer rides." />
-          <Info title="Women-only matching" text="Riders can filter and post women-only trips for safer commuting windows." />
-          <Info title="Live trip sharing" text="Every booking can send route, driver, vehicle, and ETA details to a trusted contact." />
-          <Info title="SOS and reporting" text="Emergency contact, campus security number, and post-ride incident reporting are designed into the flow." />
-          <Info title="Fare split" text="Transparent per-student fare with UPI handoff keeps payments simple for college commuters." />
-          <Info title="Reputation" text="Ratings, recurring routes, and no-show reports help the marketplace self-correct." />
+          <Info title="College verification" text="Signup rejects non-allowlisted domains and marks accepted college emails as verified." />
+          <Info title="Document trust" text="Student ID and driver's license checks update verification status, trust score, and pay-later eligibility." />
+          <Info title="Route overlap" text="Matching compares route points, not only exact pickup and drop text." />
+          <Info title="Protected chat" text="Messages block phone-number sharing before confirmation." />
+          <Info title="Live ride safety" text="Accepted rides can start trips, push locations, share trusted contacts, and trigger SOS." />
+          <Info title="Carbon gamification" text="Completed trips update monthly and lifetime CO2 savings with badges." />
         </section>
       )}
     </main>
+  );
+}
+
+function FeatureLab({ apiCall, labOutput }) {
+  async function fullFlow() {
+    const request = await apiCall("Create ride request", "/api/ride-requests", {
+      rideId: 1,
+      passengerId: 2,
+      seatCount: 1,
+      message: "I can join from Jayanagar metro."
+    });
+    if (!request?.id) return;
+
+    await apiCall("Send pre-confirmation chat", "/api/chat", {
+      requestId: request.id,
+      senderId: 2,
+      text: "Is Gate 2 fine? I will not share my phone here."
+    });
+    await apiCall("Accept request", `/api/ride-requests/${request.id}/accept`, {});
+    const trip = await apiCall("Start live trip", "/api/trips/start", { requestId: request.id });
+    if (!trip?.id) return;
+
+    await apiCall("Push live location", `/api/trips/${trip.id}/location`, {
+      studentId: 2,
+      lat: 12.925,
+      lng: 77.5938,
+      speedKph: 28
+    });
+    await apiCall("Create UPI payment", "/api/payments", {
+      requestId: request.id,
+      payerId: 2,
+      receiverId: 1,
+      payLater: true
+    });
+    await apiCall("Complete trip and save carbon", `/api/trips/${trip.id}/complete`, {});
+    await apiCall("Rate driver", "/api/ratings", {
+      rideId: 1,
+      fromId: 2,
+      toId: 1,
+      role: "driver",
+      score: 5,
+      comment: "Safe and on time"
+    });
+    await apiCall("Carbon tracker", "/api/carbon?studentId=2", null, "GET");
+  }
+
+  return (
+    <section className="lab-shell">
+      <div className="lab-actions">
+        <button onClick={() => apiCall("College email signup", "/api/auth/signup", {
+          name: "Sneha R",
+          email: "sneha@sit.ac.in",
+          gender: "Woman",
+          trustedContacts: [{ name: "Sneha Parent", phone: "+919900000099" }]
+        })}>Signup with college email</button>
+        <button onClick={() => apiCall("Student ID verification", "/api/verifications/student-id", {
+          studentId: 2,
+          documentId: "RVCE-ID-DEMO",
+          approve: true
+        })}>Verify student ID</button>
+        <button onClick={() => apiCall("Driver license verification", "/api/verifications/license", {
+          studentId: 2,
+          documentId: "KA-DL-DEMO",
+          approve: true
+        })}>Verify license</button>
+        <button onClick={() => apiCall("Route match", "/api/matches", {
+          studentId: 2,
+          college: "RV College of Engineering",
+          from: "Jayanagar 4th Block",
+          to: "RVCE Mysore Road"
+        })}>Route-based matching</button>
+        <button onClick={() => apiCall("Fare calculator", "/api/payments/calculate", {
+          distanceKm: 14,
+          fuelCostPerKm: 8.5,
+          seats: 3
+        })}>Auto fare calculator</button>
+        <button onClick={() => apiCall("Waitlist", "/api/waitlists", {
+          rideId: 4,
+          studentId: 2,
+          route: "Yeshwanthpur to MSRIT",
+          college: "MS Ramaiah Institute of Technology"
+        })}>Join waitlist</button>
+        <button onClick={() => apiCall("Notifications", "/api/notifications?studentId=2", null, "GET")}>View notifications</button>
+        <button onClick={() => apiCall("Ride history", "/api/history?studentId=2", null, "GET")}>Ride history</button>
+        <button onClick={() => apiCall("SOS demo", "/api/trips/1/sos", {
+          studentId: 2,
+          message: "SOS test from prototype"
+        })}>SOS test</button>
+        <button onClick={fullFlow}>Run full request-to-carbon flow</button>
+      </div>
+      <pre className="lab-output">{JSON.stringify(labOutput ?? { hint: "Click a feature button to see the API response." }, null, 2)}</pre>
+    </section>
   );
 }
 
@@ -240,6 +359,7 @@ function Stat({ label, value }) {
 }
 
 function RideCard({ ride, onBook }) {
+  const seatsLeft = ride.availableSeats ?? ride.seats;
   return (
     <article className="ride-card">
       <div className="ride-top">
@@ -254,12 +374,14 @@ function RideCard({ ride, onBook }) {
         <span>{ride.college}</span>
         <span>{ride.rating} rating</span>
       </div>
+      <div className="route-note">{ride.routeSummary}</div>
       <div className="chips">
-        {ride.tags.map((tag) => <span key={tag}>{tag}</span>)}
+        {(ride.tags || []).map((tag) => <span key={tag}>{tag}</span>)}
+        {ride.recurring?.enabled && <span>{ride.recurring.days.join(", ")} recurring</span>}
       </div>
       <div className="ride-bottom">
-        <span>{ride.seats} seats left · {ride.vehicle}</span>
-        <button onClick={onBook} disabled={ride.seats === 0}>{ride.seats === 0 ? "Full" : "Request seat"}</button>
+        <span>{seatsLeft} seats left · {ride.vehicle} · saves {ride.carbonSavedKg} kg CO2</span>
+        <button onClick={onBook} disabled={seatsLeft === 0}>{seatsLeft === 0 ? "Join waitlist" : "Request seat"}</button>
       </div>
     </article>
   );

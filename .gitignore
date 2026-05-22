@@ -1,5 +1,5 @@
 server*.log
 *.tmp
-campuspool-preview.png
+campuspool-*.png
 node_modules/
 dist/

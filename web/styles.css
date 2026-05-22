@@ -76,6 +76,7 @@ nav,
 .stats-grid,
 .workspace,
 .form-shell,
+.lab-shell,
 .safety-grid,
 .toast {
   width: min(1160px, calc(100% - 32px));
@@ -315,6 +316,13 @@ select {
   font-weight: 700;
 }
 
+.route-note {
+  margin: 0.8rem 0;
+  color: var(--blue);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .ride-bottom {
   justify-content: space-between;
   margin-top: 1rem;
@@ -324,6 +332,44 @@ select {
 
 .form-shell {
   padding: 1.4rem 0 3rem;
+}
+
+.lab-shell {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.4rem 0 3rem;
+}
+
+.lab-actions,
+.lab-output {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 14px 34px rgba(33, 47, 39, 0.08);
+}
+
+.lab-actions {
+  display: grid;
+  gap: 0.7rem;
+  align-self: start;
+  padding: 1rem;
+}
+
+.lab-actions button {
+  width: 100%;
+  text-align: left;
+}
+
+.lab-output {
+  min-height: 480px;
+  max-height: 680px;
+  margin: 0;
+  padding: 1rem;
+  overflow: auto;
+  color: #dceee5;
+  background: #13221b;
+  white-space: pre-wrap;
 }
 
 .ride-form {
@@ -356,7 +402,8 @@ select {
 @media (max-width: 820px) {
   nav,
   .hero,
-  .workspace {
+  .workspace,
+  .lab-shell {
     grid-template-columns: 1fr;
   }
 
@@ -378,6 +425,7 @@ select {
   .stats-grid,
   .workspace,
   .form-shell,
+  .lab-shell,
   .safety-grid,
   .toast {
     width: min(100% - 20px, 1160px);
