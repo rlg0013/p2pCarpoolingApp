@@ -118,19 +118,11 @@ label.input-group input,
 label.input-group select,
 label.input-group textarea { margin-top: 0; }
 
-/* Input with leading icon */
-.input-with-icon { position: relative; }
-.input-with-icon input { padding-left: 2.25rem; }
-.inner-field-icon {
-  position: absolute;
-  left: 0.7rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1rem;
-  height: 1rem;
-  color: var(--text-hint);
-  pointer-events: none;
-}
+
+/* Ensure no bare SVG ever expands to block size */
+span[class] > svg,
+button > svg,
+a > svg { display: block; flex-shrink: 0; }
 
 /* =====================================================
    BUTTONS
