@@ -311,6 +311,7 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/health", s.health)
 	mux.HandleFunc("/api/stats", s.statsHandler)
 	mux.HandleFunc("/api/auth/signup", s.signupHandler)
+	mux.HandleFunc("/api/auth/login", s.loginHandler)
 	mux.HandleFunc("/api/students", s.studentsHandler)
 	mux.HandleFunc("/api/verifications/student-id", s.studentIDHandler)
 	mux.HandleFunc("/api/verifications/license", s.licenseHandler)
@@ -447,6 +448,43 @@ func (s *Server) signupHandler(w http.ResponseWriter, r *http.Request) {
 	s.students = append(s.students, input)
 	s.notify(input.ID, "auth", "College email verified", "Your account is limited to verified college-only rides.")
 	writeJSON(w, http.StatusCreated, input)
+}
+
+func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var input struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	domain, err := emailDomain(input.Email)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.domains[domain]; !ok {
+		http.Error(w, "college email domain is not allowlisted", http.StatusForbidden)
+		return
+	}
+	for _, student := range s.students {
+		if strings.EqualFold(student.Email, input.Email) {
+			s.notify(student.ID, "auth", "Signed in", "Welcome back to CampusPool.")
+			writeJSON(w, http.StatusOK, student)
+			return
+		}
+	}
+
+	http.Error(w, "student not found; sign up first", http.StatusNotFound)
 }
 
 func (s *Server) studentsHandler(w http.ResponseWriter, r *http.Request) {

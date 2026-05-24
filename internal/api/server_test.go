@@ -39,6 +39,23 @@ func TestSignupAcceptsAllowlistedCollegeEmail(t *testing.T) {
 	}
 }
 
+func TestLoginReturnsExistingStudent(t *testing.T) {
+	server := NewServer()
+	recorder := request(server, http.MethodPost, "/api/auth/login", map[string]any{
+		"email": "demo@rvce.edu.in",
+	})
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected login ok, got %d: %s", recorder.Code, recorder.Body.String())
+	}
+
+	var student Student
+	decode(t, recorder, &student)
+	if student.ID != 2 || student.Name != "Demo Student" {
+		t.Fatalf("unexpected login payload: %+v", student)
+	}
+}
+
 func TestUnverifiedDriverCannotCreateRide(t *testing.T) {
 	server := NewServer()
 	recorder := request(server, http.MethodPost, "/api/rides", map[string]any{

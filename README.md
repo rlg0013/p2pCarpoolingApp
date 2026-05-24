@@ -4,6 +4,8 @@ A peer-to-peer carpooling web-app prototype for college students in Bangalore. I
 
 ## Current Prototype Features
 
+- Uber/Ola-inspired landing page with fake login and signup flows for demo users.
+- Logged-in dashboard that groups features into Find Ride, Offer Ride, Requests, Safety, Payments, and Impact screens.
 - College email signup with an allowlist such as `@sit.ac.in`, `@rvce.edu.in`, `@pes.edu`, and more.
 - Student ID verification and driver's license verification with trust score updates.
 - Driver gating: only verified drivers can publish rides.
@@ -61,6 +63,7 @@ Open `http://localhost:8080`.
 
 - `GET /api/health`
 - `POST /api/auth/signup`
+- `POST /api/auth/login`
 - `GET /api/students`
 - `POST /api/verifications/student-id`
 - `POST /api/verifications/license`
