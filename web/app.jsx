@@ -210,31 +210,29 @@ function MockMap({ from, to, matches, activeTripId }) {
       </div>
       <svg className="mock-map-svg" viewBox="0 0 500 400" width="100%" height="100%">
         <defs>
-          <pattern id="map-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(0,0,0,0.03)" strokeWidth="0.5" />
+          <pattern id="map-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
           </pattern>
           <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity="0.1" />
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.4" />
           </filter>
         </defs>
 
-        <rect width="100%" height="100%" fill="#f1f3f4" />
+        <rect width="100%" height="100%" fill="#12121e" />
         <rect width="100%" height="100%" fill="url(#map-grid)" />
 
-        {/* Parks & Water bodies */}
-        <path d="M 120 40 Q 150 15 200 40 T 260 60 T 220 100 T 130 80 Z" fill="#e1f5fe" opacity="0.65" /> {/* Lake */}
-        <path d="M 230 140 Q 280 110 320 150 T 280 220 T 220 190 Z" fill="#e8f5e9" /> {/* Park */}
-        <path d="M 60 270 Q 90 290 120 270 T 150 300 T 100 330 T 50 300 Z" fill="#e8f5e9" /> {/* Park */}
+        {/* Water & parks – very dark tones */}
+        <path d="M 120 40 Q 150 15 200 40 T 260 60 T 220 100 T 130 80 Z" fill="#0d2440" opacity="0.7" />
+        <path d="M 230 140 Q 280 110 320 150 T 280 220 T 220 190 Z" fill="#102014" />
+        <path d="M 60 270 Q 90 290 120 270 T 150 300 T 100 330 T 50 300 Z" fill="#102014" />
 
-        {/* Major Roads */}
-        <path d="M -10 180 L 510 180" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" />
-        <path d="M -10 180 L 510 180" stroke="#e0e0e0" strokeWidth="4" strokeLinecap="round" />
-        
-        <path d="M 250 -10 L 250 410" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" />
-        <path d="M 250 -10 L 250 410" stroke="#e0e0e0" strokeWidth="4" strokeLinecap="round" />
-
-        <path d="M 20 320 L 480 80" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" />
-        <path d="M 20 320 L 480 80" stroke="#e3e3e3" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="5 3" />
+        {/* Roads */}
+        <path d="M -10 180 L 510 180" stroke="#222235" strokeWidth="9" strokeLinecap="round" />
+        <path d="M -10 180 L 510 180" stroke="#2e2e48" strokeWidth="3.5" strokeLinecap="round" />
+        <path d="M 250 -10 L 250 410" stroke="#222235" strokeWidth="9" strokeLinecap="round" />
+        <path d="M 250 -10 L 250 410" stroke="#2e2e48" strokeWidth="3.5" strokeLinecap="round" />
+        <path d="M 20 320 L 480 80" stroke="#1e1e30" strokeWidth="5" strokeLinecap="round" />
+        <path d="M 20 320 L 480 80" stroke="#2a2a40" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="5 3" />
 
         {/* Route visualization */}
         {hasRoute && (
@@ -281,8 +279,8 @@ function MockMap({ from, to, matches, activeTripId }) {
 
           return (
             <g key={name} transform={`translate(${pt.x}, ${pt.y})`} className="hub-marker">
-              {!isSelected && <circle r="4" fill="#71717a" stroke="#ffffff" strokeWidth="1" />}
-              <text y="-8" textAnchor="middle" fontSize="9" fontWeight="700" fill="#09090b" filter="url(#card-shadow)" opacity="0.75">
+              {!isSelected && <circle r="3.5" fill="#52525b" stroke="#71717a" strokeWidth="0.5" />}
+              <text y="-7" textAnchor="middle" fontSize="8.5" fontWeight="700" fill="#a1a1aa" opacity="0.85">
                 {pt.name}
               </text>
             </g>
@@ -1394,13 +1392,15 @@ function PaymentsView({ requests, allRides, currentUser, onCreatePayment, lastPa
                 <div className="payment-receipt-block animate-scale-up">
                   <div className="qr-simulated-box">
                     {/* SVG placeholder for QR Code */}
-                    <svg viewBox="0 0 100 100" width="80" height="80">
-                      <rect width="100" height="100" fill="#f8fafc" />
-                      <rect x="10" y="10" width="25" height="25" fill="#09090b" />
-                      <rect x="65" y="10" width="25" height="25" fill="#09090b" />
-                      <rect x="10" y="65" width="25" height="25" fill="#09090b" />
-                      <rect x="40" y="40" width="20" height="20" fill="#10b981" />
-                      <rect x="75" y="75" width="15" height="15" fill="#09090b" />
+                    <svg viewBox="0 0 100 100" width="72" height="72" style={{borderRadius:"6px"}}>
+                      <rect width="100" height="100" fill="#1f1f23" rx="6"/>
+                      <rect x="8" y="8" width="24" height="24" fill="#e11d48" rx="2"/>
+                      <rect x="68" y="8" width="24" height="24" fill="#e11d48" rx="2"/>
+                      <rect x="8" y="68" width="24" height="24" fill="#e11d48" rx="2"/>
+                      <rect x="40" y="38" width="20" height="20" fill="#22c55e" rx="2"/>
+                      <rect x="70" y="70" width="14" height="14" fill="#a1a1aa" rx="1"/>
+                      <rect x="38" y="10" width="8" height="8" fill="#52525b" rx="1"/>
+                      <rect x="50" y="10" width="8" height="8" fill="#52525b" rx="1"/>
                     </svg>
                     <span>UPI Split QR generated</span>
                   </div>
