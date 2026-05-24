@@ -311,6 +311,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authMode, setAuthMode] = useState(null);
   const [activeSection, setActiveSection] = useState("find");
+  const [navHistory, setNavHistory] = useState([]);   // breadcrumb stack
   const [rides, setRides] = useState([]);
   const [students, setStudents] = useState([]);
   const [hubs, setHubs] = useState([]);
@@ -330,6 +331,36 @@ function App() {
   const [activeTripId, setActiveTripId] = useState(null);
   const [lastPayment, setLastPayment] = useState(null);
   const [toast, setToast] = useState("");
+
+  // Navigate to a section and push previous onto the history stack
+  function navigate(sectionId) {
+    if (sectionId === activeSection) return;
+    setNavHistory((prev) => [...prev, activeSection]);
+    setActiveSection(sectionId);
+  }
+
+  // Go back to the previous section
+  function goBack() {
+    setNavHistory((prev) => {
+      if (!prev.length) return prev;
+      const next = [...prev];
+      const target = next.pop();
+      setActiveSection(target);
+      return next;
+    });
+  }
+
+  // Return to landing page (same as logout but kept separate for UX)
+  function goHome() {
+    setCurrentUser(null);
+    setAuthMode(null);
+    setActiveSection("find");
+    setNavHistory([]);
+    setRequests([]);
+    setNotifications([]);
+    setHistory([]);
+    setCarbon(null);
+  }
 
   const visibleRides = useMemo(() => {
     const source = matches.length ? matches.map((match) => ({ ...match.ride, overlapScore: match.overlapScore })) : rides;
@@ -412,6 +443,7 @@ function App() {
     setCurrentUser(user);
     setAuthMode(null);
     setActiveSection("find");
+    setNavHistory([]);
     await loadBaseData(user);
     setToast(`Welcome back, ${user.name}`);
   }
@@ -427,6 +459,7 @@ function App() {
     setCurrentUser(user);
     setAuthMode(null);
     setActiveSection("safety");
+    setNavHistory([]);
     await loadBaseData(user);
     setToast("Account created. Complete verification to unlock all ride actions.");
   }
@@ -452,7 +485,7 @@ function App() {
     });
     if (Array.isArray(data)) {
       setMatches(data);
-      setActiveSection("find");
+      navigate("find");
     }
   }
 
@@ -469,12 +502,12 @@ function App() {
     });
     if (response?.status === "Waitlisted") {
       setToast(`Added to waitlist at position ${response.position}`);
-      setActiveSection("impact");
+      navigate("impact");
       return;
     }
     if (response?.id) {
       setSelectedRequestId(response.id);
-      setActiveSection("requests");
+      navigate("requests");
     }
   }
 
@@ -494,7 +527,7 @@ function App() {
       fuelCostPerKm: Number(rideForm.fuelCostPerKm)
     });
     if (created) {
-      setActiveSection("find");
+      navigate("find");
       setMatches([]);
     }
   }
@@ -586,6 +619,7 @@ function App() {
     setCurrentUser(null);
     setAuthMode(null);
     setActiveSection("find");
+    setNavHistory([]);
     setRequests([]);
     setNotifications([]);
     setHistory([]);
@@ -620,7 +654,10 @@ function App() {
           search={search}
           setSearch={setSearch}
           activeSection={activeSection}
-          setActiveSection={setActiveSection}
+          setActiveSection={navigate}
+          navHistory={navHistory}
+          onBack={goBack}
+          onGoHome={goHome}
           rideForm={rideForm}
           setRideForm={setRideForm}
           fareQuote={fareQuote}
@@ -899,16 +936,20 @@ function AuthModal({ mode, onMode, onClose, onLogin, onSignup, onDemoLogin }) {
 // Authenticated Dashboard Layout
 // ==========================================
 function Dashboard(props) {
+  const canGoBack = props.navHistory && props.navHistory.length > 0;
+  const currentLabel = dashboardSections.find((s) => s.id === props.activeSection)?.label || "Dashboard";
+
   return (
     <div className="dashboard-grid">
       <aside className="sidebar-menu">
-        <div className="sidebar-brand">
+        {/* Logo — click to go home (landing page) */}
+        <button className="sidebar-brand sidebar-brand-btn" onClick={props.onGoHome} title="Back to home">
           <div className="brand-badge">CP</div>
           <div>
             <h4>CampusPool</h4>
-            <span>Bangalore Commute</span>
+            <span>Back to home ↩</span>
           </div>
-        </div>
+        </button>
         <nav className="sidebar-links">
           {dashboardSections.map((sec) => (
             <button
@@ -939,7 +980,15 @@ function Dashboard(props) {
       </aside>
 
       <section className="dashboard-main-area">
-        <TopBar user={props.currentUser} notifications={props.notifications} stats={props.stats} />
+        <TopBar
+          user={props.currentUser}
+          notifications={props.notifications}
+          stats={props.stats}
+          currentLabel={currentLabel}
+          canGoBack={canGoBack}
+          onBack={props.onBack}
+          onGoHome={props.onGoHome}
+        />
         <div className="dashboard-view-wrapper">
           {props.activeSection === "find" && <FindRideView {...props} />}
           {props.activeSection === "offer" && <OfferRideView {...props} />}
@@ -956,12 +1005,24 @@ function Dashboard(props) {
 // ==========================================
 // Dashboard Header (TopBar)
 // ==========================================
-function TopBar({ user, notifications, stats }) {
+function TopBar({ user, notifications, stats, currentLabel, canGoBack, onBack, onGoHome }) {
   return (
     <header className="dashboard-top-bar">
-      <div className="topbar-welcome">
-        <span>Verified student profile</span>
-        <h3>{user.name}</h3>
+      <div className="topbar-left">
+        {/* Back button — appears only when there is navigation history */}
+        {canGoBack && (
+          <button className="btn-back" onClick={onBack} title="Go back">
+            <svg style={{width:14,height:14,display:'block'}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Back
+          </button>
+        )}
+        <div className="topbar-breadcrumb">
+          <button className="breadcrumb-home" onClick={onGoHome} title="Go to landing page">Home</button>
+          <span className="breadcrumb-sep">›</span>
+          <span className="breadcrumb-current">{currentLabel}</span>
+        </div>
       </div>
       <div className="topbar-pills">
         <div className="header-stat-pill trust">

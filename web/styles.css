@@ -484,8 +484,18 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important
   display: flex; align-items: center; gap: 0.6rem;
   padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1rem;
 }
-.sidebar-brand h4 { font-size: 0.95rem; }
-.sidebar-brand span { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; display: block; }
+/* Clickable logo button variant */
+.sidebar-brand-btn {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.5rem; margin: -0.6rem -0.5rem 0.4rem;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 1rem; padding-bottom: 1rem;
+  background: none; border: none; border-bottom: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm); cursor: pointer; width: 100%; text-align: left;
+  transition: var(--ease); min-height: auto;
+}
+.sidebar-brand-btn:hover { background: var(--bg-hover); }
+.sidebar-brand-btn:hover span { color: var(--accent); }
 
 .sidebar-links { display: flex; flex-direction: column; gap: 0.2rem; flex-grow: 1; }
 .sidebar-nav-btn {
@@ -527,8 +537,33 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important
   padding: 0.85rem 1.75rem; display: flex; justify-content: space-between;
   align-items: center; position: sticky; top: 0; z-index: 90;
 }
-.topbar-welcome span { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.06em; }
-.topbar-welcome h3 { font-size: 1.1rem; color: var(--text-primary); margin-top: 0.1rem; }
+/* Topbar left section: breadcrumb + back button */
+.topbar-left {
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.btn-back {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1px solid var(--border-subtle); border-radius: var(--r-sm);
+  padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; transition: var(--ease); min-height: 30px;
+}
+.btn-back:hover { background: var(--accent-dim); color: var(--accent); border-color: rgba(225,29,72,0.3); }
+.topbar-breadcrumb {
+  display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;
+}
+.breadcrumb-home {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  padding: 0; min-height: auto; transition: var(--ease);
+}
+.breadcrumb-home:hover { color: var(--accent); }
+.breadcrumb-sep { color: var(--text-hint); font-size: 0.9rem; }
+.breadcrumb-current { color: var(--text-primary); font-weight: 700; font-size: 0.82rem; }
+.sidebar-brand h4 { font-size: 0.95rem; }
+.sidebar-brand span, .sidebar-brand-btn h4 { font-size: 0.95rem; }
+.sidebar-brand-btn span { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; display: block; transition: var(--ease); }
+.sidebar-brand-btn h4 { font-size: 0.95rem; color: var(--text-primary); }
 
 .topbar-pills { display: flex; gap: 0.65rem; }
 .header-stat-pill {
